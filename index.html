@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>台灣人口指標儀表板</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, "PingFang TC", sans-serif; }
+  body { background: #f0f2f5; color: #2c3e50; }
+  .header { background: #1a3a5c; color: white; padding: 16px 24px; }
+  .header h1 { font-size: 22px; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px 24px; }
+  .card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card .num { font-size: 26px; font-weight: bold; color: #1a3a5c; }
+  .card .lbl { font-size: 13px; color: #7f8c8d; margin-top: 4px; }
+  .main { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 0 24px 24px; }
+  .map-box { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: 600px; }
+  .map-box iframe { width: 100%; height: 100%; border: none; }
+  .side { display: flex; flex-direction: column; gap: 16px; }
+  .panel { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .panel h3 { font-size: 15px; margin-bottom: 12px; color: #1a3a5c; border-left: 4px solid #1a3a5c; padding-left: 8px; }
+  #detail .county-name { font-size: 20px; font-weight: bold; margin-bottom: 12px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+  .detail-row span:first-child { color: #7f8c8d; }
+  .detail-row span:last-child { font-weight: 600; }
+  .placeholder { color: #aaa; font-size: 14px; text-align: center; padding: 30px 0; }
+  .rank-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; border-bottom: 1px solid #f5f5f5; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>台灣各縣市人口指標儀表板（2025 / 民國114年）</h1>
+    <p>資料來源：內政部戶政司開放資料｜人口為 2025 年底數，出生為 2025 年按發生日期統計｜點選地圖縣市看詳情</p>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="num">23,286,519</div><div class="lbl">全台總人口</div></div>
+    <div class="card"><div class="num">105,676</div><div class="lbl">全年總出生數</div></div>
+    <div class="card"><div class="num">18 個</div><div class="lbl">人口負成長縣市</div></div>
+    <div class="card"><div class="num">基隆市 2.8‰</div><div class="lbl">出生率最低</div></div>
+  </div>
+
+  <div class="main">
+    <div class="map-box"><iframe src="taiwan_map.html"></iframe></div>
+    <div class="side">
+      <div class="panel" id="detail">
+        <h3>📍 縣市詳情</h3>
+        <div class="placeholder">點選地圖上的縣市<br>查看詳細數據</div>
+      </div>
+      <div class="panel">
+        <h3>📉 人口流失最多</h3>
+        <div class='rank-row'><span>1. 臺北市</span><span style='color:#c0392b'>-51,348</span></div><div class='rank-row'><span>2. 彰化縣</span><span style='color:#c0392b'>-15,454</span></div><div class='rank-row'><span>3. 高雄市</span><span style='color:#c0392b'>-12,851</span></div><div class='rank-row'><span>4. 雲林縣</span><span style='color:#c0392b'>-7,413</span></div><div class='rank-row'><span>5. 屏東縣</span><span style='color:#c0392b'>-6,984</span></div>
+      </div>
+      <div class="panel">
+        <h3>📈 人口增加最多</h3>
+        <div class='rank-row'><span>1. 桃園市</span><span style='color:#27ae60'>+16,452</span></div><div class='rank-row'><span>2. 臺中市</span><span style='color:#27ae60'>+7,883</span></div><div class='rank-row'><span>3. 新竹縣</span><span style='color:#27ae60'>+2,605</span></div><div class='rank-row'><span>4. 宜蘭縣</span><span style='color:#27ae60'>+123</span></div><div class='rank-row'><span>5. 連江縣</span><span style='color:#27ae60'>-403</span></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var DETAIL = {"臺東縣": {"Population": "208,254", "Births": "1,193", "BirthRate": "5.73 ‰", "PopChange": "-1,901", "Density": "58 人/km²"}, "宜蘭縣": {"Population": "449,326", "Births": "1,890", "BirthRate": "4.21 ‰", "PopChange": "+123", "Density": "205 人/km²"}, "臺北市": {"Population": "2,438,848", "Births": "12,373", "BirthRate": "5.07 ‰", "PopChange": "-51,348", "Density": "9,029 人/km²"}, "雲林縣": {"Population": "650,763", "Births": "4,449", "BirthRate": "6.84 ‰", "PopChange": "-7,413", "Density": "482 人/km²"}, "桃園市": {"Population": "2,354,598", "Births": "12,980", "BirthRate": "5.51 ‰", "PopChange": "+16,452", "Density": "1,945 人/km²"}, "屏東縣": {"Population": "781,884", "Births": "3,572", "BirthRate": "4.57 ‰", "PopChange": "-6,984", "Density": "280 人/km²"}, "臺中市": {"Population": "2,867,970", "Births": "12,486", "BirthRate": "4.35 ‰", "PopChange": "+7,883", "Density": "1,288 人/km²"}, "臺南市": {"Population": "1,852,042", "Births": "7,032", "BirthRate": "3.80 ‰", "PopChange": "-6,143", "Density": "821 人/km²"}, "基隆市": {"Population": "359,785", "Births": "1,023", "BirthRate": "2.84 ‰", "PopChange": "-1,601", "Density": "2,697 人/km²"}, "連江縣": {"Population": "12,056", "Births": "62", "BirthRate": "5.14 ‰", "PopChange": "-403", "Density": "398 人/km²"}, "南投縣": {"Population": "467,201", "Births": "1,987", "BirthRate": "4.25 ‰", "PopChange": "-4,394", "Density": "114 人/km²"}, "澎湖縣": {"Population": "106,651", "Births": "565", "BirthRate": "5.30 ‰", "PopChange": "-1,182", "Density": "776 人/km²"}, "苗栗縣": {"Population": "531,081", "Births": "2,302", "BirthRate": "4.33 ‰", "PopChange": "-1,696", "Density": "294 人/km²"}, "嘉義市": {"Population": "261,501", "Births": "1,117", "BirthRate": "4.27 ‰", "PopChange": "-587", "Density": "4,374 人/km²"}, "新竹縣": {"Population": "597,214", "Births": "2,770", "BirthRate": "4.64 ‰", "PopChange": "+2,605", "Density": "425 人/km²"}, "新北市": {"Population": "4,043,754", "Births": "15,141", "BirthRate": "3.74 ‰", "PopChange": "-501", "Density": "1,957 人/km²"}, "花蓮縣": {"Population": "311,922", "Births": "1,448", "BirthRate": "4.64 ‰", "PopChange": "-2,505", "Density": "68 人/km²"}, "高雄市": {"Population": "2,717,232", "Births": "12,153", "BirthRate": "4.47 ‰", "PopChange": "-12,851", "Density": "915 人/km²"}, "彰化縣": {"Population": "1,209,904", "Births": "6,606", "BirthRate": "5.46 ‰", "PopChange": "-15,454", "Density": "1,092 人/km²"}, "嘉義縣": {"Population": "473,022", "Births": "1,646", "BirthRate": "3.48 ‰", "PopChange": "-5,591", "Density": "243 人/km²"}, "金門縣": {"Population": "135,885", "Births": "541", "BirthRate": "3.98 ‰", "PopChange": "-4,002", "Density": "879 人/km²"}, "新竹市": {"Population": "455,626", "Births": "2,340", "BirthRate": "5.14 ‰", "PopChange": "-1,500", "Density": "3,918 人/km²"}};
+  window.addEventListener('message', function(e) {
+    var name = e.data.COUNTYNAME;
+    if (!name || !DETAIL[name]) return;
+    var d = DETAIL[name];
+    document.getElementById('detail').innerHTML =
+      '<h3>📍 縣市詳情</h3>' +
+      '<div class="county-name">' + name + '</div>' +
+      '<div class="detail-row"><span>人口</span><span>' + d.Population + '</span></div>' +
+      '<div class="detail-row"><span>出生數</span><span>' + d.Births + '</span></div>' +
+      '<div class="detail-row"><span>出生率</span><span>' + d.BirthRate + '</span></div>' +
+      '<div class="detail-row"><span>人口淨變化</span><span>' + d.PopChange + '</span></div>' +
+      '<div class="detail-row"><span>人口密度</span><span>' + d.Density + '</span></div>';
+  });
+</script>
+</body>
+</html>
