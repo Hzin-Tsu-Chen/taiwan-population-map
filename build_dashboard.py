@@ -6,7 +6,7 @@
 
 資料來源（皆為政府開放資料）：
   - 內政部戶政司：人口（2025）、年齡結構（2024）
-  - 衛福部食藥署：餐飲場所登錄（22.8 萬筆）
+  - 衛福部食藥署：餐飲場所登錄（23.2 萬家）
   - 衛福部社家署：全國老人福利機構名冊（含核定床數）
 
 產出：
@@ -24,16 +24,18 @@ MIN_POP = 20000       # 餐飲選址：市場規模門檻
 MIN_ELDERLY = 3000    # 長照分析：老年人口門檻（避免極小鄉鎮失真）
 
 
-def normalize(name):
-    """圖資行政區正規化：桃園升格、台→臺"""
-    return name.replace('桃園縣', '桃園市').replace('台', '臺')
-
-
 # ══════════════════════════════════════════
 # 1. 讀取與合併資料
 # ══════════════════════════════════════════
+#
+# 界線圖資使用內政部國土測繪中心「鄉鎮市區界線(TWD97經緯度)」官方版（民國114/03/18）。
+#
+# 【踩過的坑，特此記錄】原先採用的是社群流傳的舊版 GeoJSON，行政區名稱停留在改制前
+# （中壢「市」、蘆竹「鄉」…），與戶政司的現行名稱 join 不起來，導致整個桃園市 13 個區
+# 靜默消失於地圖之外（234 萬人、2.7 萬家餐飲店）；且該圖資把那瑪夏區誤標為「三民區」，
+# 而高雄真正的三民區根本不存在。改用官方版後兩個問題一併消失，
+# 下方的合併完整性檢查則確保同類錯誤不會再無聲發生。
 towns = gpd.read_file('town_boundaries.geojson')
-towns['COUNTYNAME'] = towns['COUNTYNAME'].apply(normalize)
 towns['geometry'] = towns.geometry.simplify(0.001)      # 簡化幾何，加快載入
 
 site = pd.read_csv('town_indicators.csv')               # 餐飲選址指標
@@ -43,6 +45,22 @@ towns = towns.merge(site, on=['COUNTYNAME', 'TOWNNAME'], how='inner')
 towns = towns.merge(ltc.drop(columns=['Elderly65'], errors='ignore').assign(
     Elderly65=ltc['Elderly65']), on=['COUNTYNAME', 'TOWNNAME'], how='left')
 towns['NAME'] = towns['COUNTYNAME'] + towns['TOWNNAME']
+
+# ── 合併完整性檢查 ──────────────────────────────────────────
+# 這是內連接：任何行政區名稱對不上的鄉鎮都會被靜默丟棄。
+# （曾因圖資使用桃園升格前的舊地名，整個桃園市 13 個區無聲消失。）
+# 故此處驗證：合併後的統計數字必須等於原始檔的總計，否則直接中止。
+lost_rows = len(site) - len(towns)
+lost_rest = int(site['Restaurants'].sum() - towns['Restaurants'].sum())
+if lost_rows or lost_rest:
+    missing = set(zip(site.COUNTYNAME, site.TOWNNAME)) - set(zip(towns.COUNTYNAME, towns.TOWNNAME))
+    raise SystemExit(
+        f'✗ 合併遺漏 {lost_rows} 個鄉鎮、{lost_rest:,} 家餐飲店。'
+        f'未匹配的行政區：{sorted(missing)}\n'
+        f'  可能原因：界線圖資的行政區名稱與戶政司資料不一致（如行政區改制未更新）。')
+print(f'✓ 合併完整性檢查通過：{len(towns)} 個鄉鎮、'
+      f"{int(towns['Restaurants'].sum()):,} 家餐飲店、"
+      f"{int(towns['Institutions'].sum())} 家長照機構，與原始檔一致")
 towns[['Elderly65', 'Institutions', 'Beds', 'BedsPer1000']] = \
     towns[['Elderly65', 'Institutions', 'Beds', 'BedsPer1000']].fillna(0)
 
@@ -300,6 +318,29 @@ html = """<!DOCTYPE html>
   .rank-row .go{color:#95a5a6;font-size:11px}
   .rank-row.click:hover .go{color:#1a3a5c}
   .tip{font-size:11.5px;color:#7f8c8d;margin-bottom:8px}
+
+  /* 資料來源與免責聲明 */
+  .foot{background:#fff;border-radius:10px;padding:20px;margin-top:22px;box-shadow:0 1px 3px rgba(0,0,0,.08);color:#5a6b7c}
+  .foot h4{font-size:14px;color:#1a3a5c;margin:0 0 10px;border-left:4px solid #1a3a5c;padding-left:8px}
+  .foot h4:not(:first-child){margin-top:22px}
+  .src{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.6}
+  .src th{text-align:left;padding:8px;background:#f5f8fa;color:#1a3a5c;font-size:11.5px;border-bottom:2px solid #e3e9ee}
+  .src td{padding:9px 8px;border-bottom:1px solid #f0f3f5;vertical-align:top}
+  .src small{color:#95a5a6;font-size:11px}
+  .src a{color:#1a6fa8;text-decoration:none}
+  .src a:hover{text-decoration:underline}
+  .src-wrap{overflow-x:auto}
+  .dis{margin:0;padding-left:20px;font-size:12.5px;line-height:1.85}
+  .dis li{margin-bottom:7px}
+  .dis b{color:#34495e}
+  .lic{margin-top:18px;padding-top:14px;border-top:1px solid #eef1f4;font-size:12px;color:#95a5a6;line-height:1.8}
+  .lic a{color:#1a6fa8;text-decoration:none}
+  @media(max-width:820px){
+    .src thead{display:none}
+    .src tr{display:block;border-bottom:1px solid #e8edf1;padding:8px 0}
+    .src td{display:block;border:none;padding:2px 0}
+    .src td:first-child{font-weight:700;color:#1a3a5c}
+  }
   .note{margin-top:16px;background:#fff8e6;border-left:4px solid #f0ad4e;padding:12px;border-radius:6px;font-size:12px;color:#6b5b3e}
   .hide{display:none}
   @media(max-width:820px){
@@ -365,6 +406,64 @@ html = """<!DOCTYPE html>
         <b>資料範圍限制（重要）：</b>本資料為衛福部社家署「老人福利機構」名冊，屬<b>住宿式安養／養護機構</b>；<b>不含</b>護理之家（另依《護理機構法》管理）與長照2.0 的居家式／社區式服務（如日照中心）。因此「0 床」代表該鄉鎮無住宿式老人福利機構，<b>不等於完全沒有長照資源</b>。另，年齡結構資料最新僅至 2024 年。
       </div>
     </div>
+
+    <!-- ── 資料來源與免責聲明 ── -->
+    <footer class="foot">
+      <h4>📚 資料來源（皆為政府公開資料，非估算或推測值）</h4>
+      <div class="src-wrap">
+      <table class="src">
+        <thead><tr><th>資料項目</th><th>提供機關</th><th>資料集／來源連結</th><th>本專案採用版本</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>鄉鎮人口數<br><small>（人口、人口淨變化）</small></td>
+            <td>內政部戶政司</td>
+            <td><a href="https://www.ris.gov.tw/rs-opendata/api/v1/datastore/ODRP019/114" target="_blank" rel="noopener">戶政司開放資料 API — ODRP019<br><small>鄉鎮市區人口數（按性別及年齡）</small></a></td>
+            <td>民國 114 年（2025）<br><small>人口淨變化 = 114 年 − 113 年</small></td>
+          </tr>
+          <tr>
+            <td>65 歲以上老年人口</td>
+            <td>內政部戶政司</td>
+            <td><a href="https://www.ris.gov.tw/rs-opendata/api/v1/datastore/ODRP052/113" target="_blank" rel="noopener">戶政司開放資料 API — ODRP052<br><small>現住人口按性別、年齡、婚姻狀況</small></a></td>
+            <td>民國 113 年（2024）<br><small>此資料集最新僅至此年度</small></td>
+          </tr>
+          <tr>
+            <td>餐飲場所家數<br><small>（__N_REST__）</small></td>
+            <td>衛生福利部<br>食品藥物管理署</td>
+            <td><a href="https://data.gov.tw/dataset/8938" target="_blank" rel="noopener">政府資料開放平臺 — 資料集 8938<br><small>食品業者登錄資料集</small></a></td>
+            <td>篩選「登錄項目＝餐飲場所」</td>
+          </tr>
+          <tr>
+            <td>老人福利機構與床位<br><small>（__N_LTC__）</small></td>
+            <td>衛生福利部<br>社會及家庭署</td>
+            <td><a href="https://data.gov.tw/dataset/8572" target="_blank" rel="noopener">政府資料開放平臺 — 資料集 8572<br><small>全國老人福利機構名冊</small></a></td>
+            <td>22 縣市名冊彙整</td>
+          </tr>
+          <tr>
+            <td>鄉鎮市區界線圖資<br><small>（__N_TOWN__ 個鄉鎮）</small></td>
+            <td>內政部國土測繪中心</td>
+            <td><a href="https://data.gov.tw/dataset/7441" target="_blank" rel="noopener">政府資料開放平臺 — 資料集 7441<br><small>鄉鎮市區界線（TWD97 經緯度）</small></a></td>
+            <td>TWD97 / EPSG:3826<br><small>已套用行政區改制對照<br>（桃園升格等）</small></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h4>⚠️ 免責聲明</h4>
+      <ol class="dis">
+        <li><b>指標為本人自行建立的分析模型，非政府官方指標。</b>「選址機會指數」與「長照缺口指數」的權重（60/40）與門檻（人口 ≥ 2 萬、老年人口 ≥ 3,000）由我依分析目的設定，政府並未發布此類指數。原始統計數字（人口、店家數、床位數）則完全取自上表來源，未經任何調整或推估。</li>
+          <li><b>資料時點不一致。</b>人口為民國 114 年（2025）、年齡結構為民國 113 年（2024，該資料集最新僅至此年度）、餐飲與長照名冊為下載當日之最新版。跨年度比較時請注意此落差。</li>
+        <li><b>餐飲場所家數為「已登錄業者」數，非實際營業家數。</b>依《食品安全衛生管理法》第 8 條，食品業者應辦理登錄；但登錄後歇業未註銷者仍會計入，小規模攤商亦可能未登錄，故數字會與街上實際店數有出入。</li>
+        <li><b>長照資料僅涵蓋住宿式老人福利機構。</b>不含護理之家（另依《護理機構分類設置標準》管理）與長照 2.0 之居家式／社區式服務（如日間照顧中心）。因此「0 床」代表該鄉鎮無住宿式老人福利機構，<b>不代表該地完全沒有長照資源</b>。</li>
+        <li><b>選址模型以「居住人口」為市場基礎。</b>商業區（如臺中中區）有大量通勤消費人口，實際商機會被低估；郊區則可能因外食習慣較低而被高估。實務選址仍須搭配人流、租金與交通資料。</li>
+        <li>本平臺為個人技術作品，分析結果<b>僅供技術能力展示，不構成任何投資、開店或政策建議</b>。</li>
+      </ol>
+
+      <p class="lic">
+        政府資料依「<a href="https://data.gov.tw/license" target="_blank" rel="noopener">政府資料開放授權條款－第 1 版</a>」使用。
+        分析程式碼（ETL、指標計算、地圖產生）為本人自行撰寫，
+        原始碼公開於 <a href="https://github.com/Hzin-Tsu-Chen/taiwan-population-map" target="_blank" rel="noopener">GitHub</a>，可完整檢視每一個數字的計算過程。
+      </p>
+    </footer>
   </div>
 
 <script>
@@ -432,6 +531,9 @@ html = (html
         .replace('__SITE_BOTTOM__', rank_html(stats['site']['bottom'], '', '#c0392b'))
         .replace('__LTC_TOP__', rank_html(stats['ltc']['top'], ' 床', '#c0392b'))
         .replace('__LTC_BOTTOM__', rank_html(stats['ltc']['bottom'], '', '#27ae60'))
+        .replace('__N_TOWN__', str(len(towns)))
+        .replace('__N_REST__', f"{int(towns['Restaurants'].sum()):,} 家登錄")
+        .replace('__N_LTC__', f"{int(towns['Institutions'].sum()):,} 家、{int(towns['Beds'].sum()):,} 床")
         .replace('__BP1K__', f'{national_bp1k:.1f}')
         .replace('__DETAIL__', json.dumps(detail, ensure_ascii=False)))
 
