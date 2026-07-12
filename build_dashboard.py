@@ -297,9 +297,13 @@ html = """<!DOCTYPE html>
   .card{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .card .num{font-size:21px;font-weight:700;color:#1a3a5c}
   .card .lbl{font-size:12px;color:#7f8c8d;margin-top:3px}
-  .main{display:grid;grid-template-columns:1fr 330px;gap:16px}
-  .map-box{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);height:580px}
-  .map-box iframe{width:100%;height:100%;border:none}
+  /* 地圖不設固定高度，改由 grid 的 stretch 撐滿整列 ——
+     否則右側排行榜比地圖高時，地圖底下會空出一大塊白，
+     使用者會誤以為頁面到此結束、不再往下捲。 */
+  .main{display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:stretch}
+  .map-box{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);
+           min-height:580px;position:relative}
+  .map-box iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
   .side{display:flex;flex-direction:column;gap:14px}
   .panel{background:#fff;border-radius:10px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .panel h3{font-size:14px;margin-bottom:10px;color:#1a3a5c;border-left:4px solid #1a3a5c;padding-left:8px}
@@ -318,9 +322,20 @@ html = """<!DOCTYPE html>
   .rank-row .go{color:#95a5a6;font-size:11px}
   .rank-row.click:hover .go{color:#1a3a5c}
   .tip{font-size:11.5px;color:#7f8c8d;margin-bottom:8px}
+  html{scroll-behavior:smooth}
+
+  /* 「往下還有內容」指引 —— 避免使用者以為頁面到地圖就結束了 */
+  .more{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+        margin-top:12px;padding:12px 16px;background:#fff;border:1px solid #e3e9ee;border-radius:10px;
+        text-decoration:none;color:#1a3a5c;font-size:13px;font-weight:600;
+        box-shadow:0 1px 3px rgba(0,0,0,.06);transition:background .15s,transform .15s}
+  .more:hover{background:#f4f9fd;transform:translateY(-1px)}
+  .more-go{color:#7f8c8d;font-weight:400;font-size:12px;animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+  @media(prefers-reduced-motion:reduce){.more-go{animation:none}}
 
   /* 資料來源與免責聲明 */
-  .foot{background:#fff;border-radius:10px;padding:20px;margin-top:22px;box-shadow:0 1px 3px rgba(0,0,0,.08);color:#5a6b7c}
+  .foot{background:#fff;border-radius:10px;padding:20px;margin-top:14px;box-shadow:0 1px 3px rgba(0,0,0,.08);color:#5a6b7c;scroll-margin-top:16px}
   .foot h4{font-size:14px;color:#1a3a5c;margin:0 0 10px;border-left:4px solid #1a3a5c;padding-left:8px}
   .foot h4:not(:first-child){margin-top:22px}
   .src{width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.6}
@@ -383,7 +398,10 @@ html = """<!DOCTYPE html>
       <div class="note">
         <b>分析模型：</b>機會指數 = 競爭分數(60%) + 成長分數(40%)。競爭分數看「每店服務人口」（越多代表店少人多、市場未飽和）；成長分數看人口淨變化。僅評估人口 ≥ 2 萬的鄉鎮。<br>
         <b>已知限制：</b>本模型以「居住人口」為市場基礎，但商業區（如臺中中區）有大量通勤消費人口，實際商機會被低估；郊區則可能因外食習慣較低而被高估。實務選址仍需搭配人流、租金與交通資料。
-      </div>
+        <a class="more" href="#sources">
+        <span>📚 本平臺所有數字的資料來源與免責聲明</span>
+        <span class="more-go">向下查看 ↓</span>
+      </a>
     </div>
 
     <!-- 模組二：長照缺口 -->
@@ -404,11 +422,14 @@ html = """<!DOCTYPE html>
       <div class="note">
         <b>分析模型：</b>以「每千名老人床位數」衡量長照供給密度，全國平均為 __BP1K__ 床。缺口指數 0 = 達全國平均，100 = 完全無床位。「達標尚缺床位」= 該鄉鎮達到全國平均水準所需增設的床數。僅評估老年人口 ≥ 3,000 的鄉鎮。<br>
         <b>資料範圍限制（重要）：</b>本資料為衛福部社家署「老人福利機構」名冊，屬<b>住宿式安養／養護機構</b>；<b>不含</b>護理之家（另依《護理機構法》管理）與長照2.0 的居家式／社區式服務（如日照中心）。因此「0 床」代表該鄉鎮無住宿式老人福利機構，<b>不等於完全沒有長照資源</b>。另，年齡結構資料最新僅至 2024 年。
-      </div>
+        <a class="more" href="#sources">
+        <span>📚 本平臺所有數字的資料來源與免責聲明</span>
+        <span class="more-go">向下查看 ↓</span>
+      </a>
     </div>
 
     <!-- ── 資料來源與免責聲明 ── -->
-    <footer class="foot">
+    <footer class="foot" id="sources">
       <h4>📚 資料來源（皆為政府公開資料，非估算或推測值）</h4>
       <div class="src-wrap">
       <table class="src">
