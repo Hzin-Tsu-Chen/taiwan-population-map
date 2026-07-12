@@ -34,6 +34,12 @@
   .why{margin-top:12px;padding:12px;background:#f8fbff;border-left:4px solid #1a3a5c;border-radius:6px;font-size:12.5px;line-height:1.75;color:#34495e}
   .why-title{font-weight:700;color:#1a3a5c;margin-bottom:8px;font-size:13px}
   .rank-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f5f5f5}
+  .rank-row.click{cursor:pointer;padding:6px 8px;margin:0 -8px;border-radius:5px;transition:background .12s}
+  .rank-row.click:hover{background:#eaf3fb}
+  .rank-row.sel{background:#dce9f5;font-weight:600}
+  .rank-row .go{color:#95a5a6;font-size:11px}
+  .rank-row.click:hover .go{color:#1a3a5c}
+  .tip{font-size:11.5px;color:#7f8c8d;margin-bottom:8px}
   .note{margin-top:16px;background:#fff8e6;border-left:4px solid #f0ad4e;padding:12px;border-radius:6px;font-size:12px;color:#6b5b3e}
   .hide{display:none}
   @media(max-width:820px){
@@ -67,10 +73,10 @@
         <div class="side">
           <div class="panel" id="siteDetail">
             <h3>📍 鄉鎮評估</h3>
-            <div class="ph">點選地圖上的鄉鎮<br>查看選址評估</div>
+            <div class="ph">點選地圖上的鄉鎮，<br>或點下方排行榜的名稱，<br>即可查看評估過程</div>
           </div>
-          <div class="panel"><h3>🟢 最推薦開店（藍海）</h3><div class='rank-row'><span>1. 高雄市橋頭區</span><span style='color:#27ae60;font-weight:600'>88</span></div><div class='rank-row'><span>2. 臺中市外埔區</span><span style='color:#27ae60;font-weight:600'>86</span></div><div class='rank-row'><span>3. 高雄市大寮區</span><span style='color:#27ae60;font-weight:600'>85</span></div><div class='rank-row'><span>4. 高雄市仁武區</span><span style='color:#27ae60;font-weight:600'>83</span></div><div class='rank-row'><span>5. 新北市五股區</span><span style='color:#27ae60;font-weight:600'>83</span></div><div class='rank-row'><span>6. 宜蘭縣員山鄉</span><span style='color:#27ae60;font-weight:600'>81</span></div><div class='rank-row'><span>7. 屏東縣長治鄉</span><span style='color:#27ae60;font-weight:600'>80</span></div><div class='rank-row'><span>8. 高雄市梓官區</span><span style='color:#27ae60;font-weight:600'>79</span></div></div>
-          <div class="panel"><h3>🔴 最不推薦（紅海）</h3><div class='rank-row'><span>1. 臺北市中正區</span><span style='color:#c0392b;font-weight:600'>2</span></div><div class='rank-row'><span>2. 臺北市大安區</span><span style='color:#c0392b;font-weight:600'>4</span></div><div class='rank-row'><span>3. 基隆市仁愛區</span><span style='color:#c0392b;font-weight:600'>5</span></div><div class='rank-row'><span>4. 臺北市松山區</span><span style='color:#c0392b;font-weight:600'>7</span></div><div class='rank-row'><span>5. 臺南市中西區</span><span style='color:#c0392b;font-weight:600'>7</span></div></div>
+          <div class="panel"><h3>🟢 最推薦開店（藍海）</h3><div class="tip">👆 點名稱看評估過程</div><div class='rank-row click' data-n='高雄市橋頭區' onclick="showTown('高雄市橋頭區')" title='點我看評估過程'><span>1. 高雄市橋頭區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>88</span></div><div class='rank-row click' data-n='臺中市外埔區' onclick="showTown('臺中市外埔區')" title='點我看評估過程'><span>2. 臺中市外埔區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>86</span></div><div class='rank-row click' data-n='高雄市大寮區' onclick="showTown('高雄市大寮區')" title='點我看評估過程'><span>3. 高雄市大寮區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>85</span></div><div class='rank-row click' data-n='高雄市仁武區' onclick="showTown('高雄市仁武區')" title='點我看評估過程'><span>4. 高雄市仁武區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>83</span></div><div class='rank-row click' data-n='新北市五股區' onclick="showTown('新北市五股區')" title='點我看評估過程'><span>5. 新北市五股區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>83</span></div><div class='rank-row click' data-n='宜蘭縣員山鄉' onclick="showTown('宜蘭縣員山鄉')" title='點我看評估過程'><span>6. 宜蘭縣員山鄉 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>81</span></div><div class='rank-row click' data-n='屏東縣長治鄉' onclick="showTown('屏東縣長治鄉')" title='點我看評估過程'><span>7. 屏東縣長治鄉 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>80</span></div><div class='rank-row click' data-n='高雄市梓官區' onclick="showTown('高雄市梓官區')" title='點我看評估過程'><span>8. 高雄市梓官區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>79</span></div></div>
+          <div class="panel"><h3>🔴 最不推薦（紅海）</h3><div class="tip">👆 點名稱看評估過程</div><div class='rank-row click' data-n='臺北市中正區' onclick="showTown('臺北市中正區')" title='點我看評估過程'><span>1. 臺北市中正區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>2</span></div><div class='rank-row click' data-n='臺北市大安區' onclick="showTown('臺北市大安區')" title='點我看評估過程'><span>2. 臺北市大安區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>4</span></div><div class='rank-row click' data-n='基隆市仁愛區' onclick="showTown('基隆市仁愛區')" title='點我看評估過程'><span>3. 基隆市仁愛區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>5</span></div><div class='rank-row click' data-n='臺北市松山區' onclick="showTown('臺北市松山區')" title='點我看評估過程'><span>4. 臺北市松山區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>7</span></div><div class='rank-row click' data-n='臺南市中西區' onclick="showTown('臺南市中西區')" title='點我看評估過程'><span>5. 臺南市中西區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>7</span></div></div>
         </div>
       </div>
       <div class="note">
@@ -88,10 +94,10 @@
         <div class="side">
           <div class="panel" id="ltcDetail">
             <h3>📍 鄉鎮評估</h3>
-            <div class="ph">點選地圖上的鄉鎮<br>查看長照資源評估</div>
+            <div class="ph">點選地圖上的鄉鎮，<br>或點下方排行榜的名稱，<br>即可查看評估過程</div>
           </div>
-          <div class="panel"><h3>🔴 最缺床位（優先增設）</h3><div class='rank-row'><span>1. 臺北市大安區</span><span style='color:#c0392b;font-weight:600'>753 床</span></div><div class='rank-row'><span>2. 臺北市信義區</span><span style='color:#c0392b;font-weight:600'>647 床</span></div><div class='rank-row'><span>3. 臺北市內湖區</span><span style='color:#c0392b;font-weight:600'>512 床</span></div><div class='rank-row'><span>4. 臺北市松山區</span><span style='color:#c0392b;font-weight:600'>502 床</span></div><div class='rank-row'><span>5. 新北市三重區</span><span style='color:#c0392b;font-weight:600'>478 床</span></div><div class='rank-row'><span>6. 臺中市太平區</span><span style='color:#c0392b;font-weight:600'>432 床</span></div><div class='rank-row'><span>7. 高雄市鳳山區</span><span style='color:#c0392b;font-weight:600'>410 床</span></div><div class='rank-row'><span>8. 臺北市中山區</span><span style='color:#c0392b;font-weight:600'>396 床</span></div></div>
-          <div class="panel"><h3>🟢 資源最充足</h3><div class='rank-row'><span>1. 臺南市安平區</span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row'><span>2. 屏東縣長治鄉</span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row'><span>3. 高雄市旗山區</span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row'><span>4. 嘉義市東區</span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row'><span>5. 花蓮縣吉安鄉</span><span style='color:#27ae60;font-weight:600'>0</span></div></div>
+          <div class="panel"><h3>🔴 最缺床位（優先增設）</h3><div class="tip">👆 點名稱看評估過程</div><div class='rank-row click' data-n='臺北市大安區' onclick="showTown('臺北市大安區')" title='點我看評估過程'><span>1. 臺北市大安區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>753 床</span></div><div class='rank-row click' data-n='臺北市信義區' onclick="showTown('臺北市信義區')" title='點我看評估過程'><span>2. 臺北市信義區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>647 床</span></div><div class='rank-row click' data-n='臺北市內湖區' onclick="showTown('臺北市內湖區')" title='點我看評估過程'><span>3. 臺北市內湖區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>512 床</span></div><div class='rank-row click' data-n='臺北市松山區' onclick="showTown('臺北市松山區')" title='點我看評估過程'><span>4. 臺北市松山區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>502 床</span></div><div class='rank-row click' data-n='新北市三重區' onclick="showTown('新北市三重區')" title='點我看評估過程'><span>5. 新北市三重區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>478 床</span></div><div class='rank-row click' data-n='臺中市太平區' onclick="showTown('臺中市太平區')" title='點我看評估過程'><span>6. 臺中市太平區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>432 床</span></div><div class='rank-row click' data-n='高雄市鳳山區' onclick="showTown('高雄市鳳山區')" title='點我看評估過程'><span>7. 高雄市鳳山區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>410 床</span></div><div class='rank-row click' data-n='臺北市中山區' onclick="showTown('臺北市中山區')" title='點我看評估過程'><span>8. 臺北市中山區 <span class='go'>▸</span></span><span style='color:#c0392b;font-weight:600'>396 床</span></div></div>
+          <div class="panel"><h3>🟢 資源最充足</h3><div class="tip">👆 點名稱看評估過程</div><div class='rank-row click' data-n='臺南市安平區' onclick="showTown('臺南市安平區')" title='點我看評估過程'><span>1. 臺南市安平區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row click' data-n='屏東縣長治鄉' onclick="showTown('屏東縣長治鄉')" title='點我看評估過程'><span>2. 屏東縣長治鄉 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row click' data-n='高雄市旗山區' onclick="showTown('高雄市旗山區')" title='點我看評估過程'><span>3. 高雄市旗山區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row click' data-n='嘉義市東區' onclick="showTown('嘉義市東區')" title='點我看評估過程'><span>4. 嘉義市東區 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>0</span></div><div class='rank-row click' data-n='花蓮縣吉安鄉' onclick="showTown('花蓮縣吉安鄉')" title='點我看評估過程'><span>5. 花蓮縣吉安鄉 <span class='go'>▸</span></span><span style='color:#27ae60;font-weight:600'>0</span></div></div>
         </div>
       </div>
       <div class="note">
@@ -114,8 +120,8 @@
     document.getElementById('m-ltc').classList.toggle('hide', m !== 'ltc');
   }
 
-  window.addEventListener('message', function(e) {
-    var n = e.data.NAME;
+  // 顯示某鄉鎮的評估 —— 地圖點選與排行榜點選共用此函式
+  function showTown(n) {
     if (!n || !D[n]) return;
     var d = D[n];
 
@@ -137,6 +143,20 @@
       '<div class="row"><span>每千名老人床位</span><span>' + d.BedsPer1000 + '</span></div>' +
       '<div class="row"><span>達標尚缺床位</span><span>' + d.BedShortfall + '</span></div>' +
       '<div class="why"><div class="why-title">🔍 為什麼是這個評估？</div>' + d.LtcWhy + '</div>';
+
+    // 標示目前選中的排行榜項目
+    document.querySelectorAll('.rank-row').forEach(function(el) {
+      el.classList.toggle('sel', el.dataset.n === n);
+    });
+
+    // 手機版面板在地圖下方，捲過去才看得到
+    var panel = document.getElementById(current === 'site' ? 'siteDetail' : 'ltcDetail');
+    if (window.innerWidth < 900) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // 地圖上點選鄉鎮 → iframe 以 postMessage 通知
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.NAME) showTown(e.data.NAME);
   });
 </script>
 </body>

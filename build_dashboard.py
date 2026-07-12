@@ -246,8 +246,11 @@ detail = {r['NAME']: {
 
 
 def rank_html(items, unit, color):
+    """排行榜每一列都可點擊 —— 使用者不一定知道「橋頭區」在地圖上的位置，
+    因此點文字就直接帶出該鄉鎮的評估面板。"""
     return ''.join(
-        f"<div class='rank-row'><span>{i}. {name}</span>"
+        f"<div class='rank-row click' data-n='{name}' onclick=\"showTown('{name}')\" title='點我看評估過程'>"
+        f"<span>{i}. {name} <span class='go'>▸</span></span>"
         f"<span style='color:{color};font-weight:600'>{val:,.0f}{unit}</span></div>"
         for i, (name, val) in enumerate(items, 1))
 
@@ -291,6 +294,12 @@ html = """<!DOCTYPE html>
   .why{margin-top:12px;padding:12px;background:#f8fbff;border-left:4px solid #1a3a5c;border-radius:6px;font-size:12.5px;line-height:1.75;color:#34495e}
   .why-title{font-weight:700;color:#1a3a5c;margin-bottom:8px;font-size:13px}
   .rank-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f5f5f5}
+  .rank-row.click{cursor:pointer;padding:6px 8px;margin:0 -8px;border-radius:5px;transition:background .12s}
+  .rank-row.click:hover{background:#eaf3fb}
+  .rank-row.sel{background:#dce9f5;font-weight:600}
+  .rank-row .go{color:#95a5a6;font-size:11px}
+  .rank-row.click:hover .go{color:#1a3a5c}
+  .tip{font-size:11.5px;color:#7f8c8d;margin-bottom:8px}
   .note{margin-top:16px;background:#fff8e6;border-left:4px solid #f0ad4e;padding:12px;border-radius:6px;font-size:12px;color:#6b5b3e}
   .hide{display:none}
   @media(max-width:820px){
@@ -324,10 +333,10 @@ html = """<!DOCTYPE html>
         <div class="side">
           <div class="panel" id="siteDetail">
             <h3>📍 鄉鎮評估</h3>
-            <div class="ph">點選地圖上的鄉鎮<br>查看選址評估</div>
+            <div class="ph">點選地圖上的鄉鎮，<br>或點下方排行榜的名稱，<br>即可查看評估過程</div>
           </div>
-          <div class="panel"><h3>🟢 最推薦開店（藍海）</h3>__SITE_TOP__</div>
-          <div class="panel"><h3>🔴 最不推薦（紅海）</h3>__SITE_BOTTOM__</div>
+          <div class="panel"><h3>🟢 最推薦開店（藍海）</h3><div class="tip">👆 點名稱看評估過程</div>__SITE_TOP__</div>
+          <div class="panel"><h3>🔴 最不推薦（紅海）</h3><div class="tip">👆 點名稱看評估過程</div>__SITE_BOTTOM__</div>
         </div>
       </div>
       <div class="note">
@@ -345,10 +354,10 @@ html = """<!DOCTYPE html>
         <div class="side">
           <div class="panel" id="ltcDetail">
             <h3>📍 鄉鎮評估</h3>
-            <div class="ph">點選地圖上的鄉鎮<br>查看長照資源評估</div>
+            <div class="ph">點選地圖上的鄉鎮，<br>或點下方排行榜的名稱，<br>即可查看評估過程</div>
           </div>
-          <div class="panel"><h3>🔴 最缺床位（優先增設）</h3>__LTC_TOP__</div>
-          <div class="panel"><h3>🟢 資源最充足</h3>__LTC_BOTTOM__</div>
+          <div class="panel"><h3>🔴 最缺床位（優先增設）</h3><div class="tip">👆 點名稱看評估過程</div>__LTC_TOP__</div>
+          <div class="panel"><h3>🟢 資源最充足</h3><div class="tip">👆 點名稱看評估過程</div>__LTC_BOTTOM__</div>
         </div>
       </div>
       <div class="note">
@@ -371,8 +380,8 @@ html = """<!DOCTYPE html>
     document.getElementById('m-ltc').classList.toggle('hide', m !== 'ltc');
   }
 
-  window.addEventListener('message', function(e) {
-    var n = e.data.NAME;
+  // 顯示某鄉鎮的評估 —— 地圖點選與排行榜點選共用此函式
+  function showTown(n) {
     if (!n || !D[n]) return;
     var d = D[n];
 
@@ -394,6 +403,20 @@ html = """<!DOCTYPE html>
       '<div class="row"><span>每千名老人床位</span><span>' + d.BedsPer1000 + '</span></div>' +
       '<div class="row"><span>達標尚缺床位</span><span>' + d.BedShortfall + '</span></div>' +
       '<div class="why"><div class="why-title">🔍 為什麼是這個評估？</div>' + d.LtcWhy + '</div>';
+
+    // 標示目前選中的排行榜項目
+    document.querySelectorAll('.rank-row').forEach(function(el) {
+      el.classList.toggle('sel', el.dataset.n === n);
+    });
+
+    // 手機版面板在地圖下方，捲過去才看得到
+    var panel = document.getElementById(current === 'site' ? 'siteDetail' : 'ltcDetail');
+    if (window.innerWidth < 900) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // 地圖上點選鄉鎮 → iframe 以 postMessage 通知
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.NAME) showTown(e.data.NAME);
   });
 </script>
 </body>
