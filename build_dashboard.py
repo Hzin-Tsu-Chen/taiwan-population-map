@@ -52,11 +52,21 @@ towns[['Elderly65', 'Institutions', 'Beds', 'BedsPer1000']] = \
 #    競爭分數(60%) + 成長分數(40%)，僅評估人口 ≥ 2 萬的鄉鎮
 # ══════════════════════════════════════════
 elig = towns[towns['Population'] >= MIN_POP].copy()
-elig['CompScore'] = elig['PeoplePerStore'].rank(pct=True) * 100
-elig['GrowScore'] = (elig['PopChange'] / elig['Population']).rank(pct=True) * 100
+elig['CompScore'] = (elig['PeoplePerStore'].rank(pct=True) * 100).round(1)
+elig['GrowthRate'] = (elig['PopChange'] / elig['Population'] * 100).round(2)
+elig['GrowScore'] = (elig['GrowthRate'].rank(pct=True) * 100).round(1)
 elig['Opportunity'] = (elig['CompScore'] * 0.6 + elig['GrowScore'] * 0.4).round(1)
-towns = towns.merge(elig[['NAME', 'Opportunity']], on='NAME', how='left')
-towns['Opportunity'] = towns['Opportunity'].fillna(0)
+
+# 全國平均每店服務人口（作為競爭程度的比較基準）
+national_pps = towns['Population'].sum() / towns['Restaurants'].sum()
+elig['PpsRatio'] = (elig['PeoplePerStore'] / national_pps).round(2)   # 為全國平均的幾倍
+n_evaluated = len(elig)
+
+towns = towns.merge(
+    elig[['NAME', 'Opportunity', 'CompScore', 'GrowScore', 'GrowthRate', 'PpsRatio']],
+    on='NAME', how='left')
+towns[['Opportunity', 'CompScore', 'GrowScore', 'GrowthRate', 'PpsRatio']] = \
+    towns[['Opportunity', 'CompScore', 'GrowScore', 'GrowthRate', 'PpsRatio']].fillna(0)
 
 # ══════════════════════════════════════════
 # 3. 模組二：長照資源缺口指數
@@ -154,6 +164,65 @@ stats = {
     },
 }
 
+def site_reasoning(r):
+    """產生選址評估的完整推理過程（所有數字皆為實際計算結果，可追溯驗證）"""
+    if r['Population'] < MIN_POP:
+        return '此鄉鎮人口未達 2 萬的評估門檻，市場規模不足，故不納入選址評估。'
+
+    comp = ('市場明顯未飽和' if r['PpsRatio'] >= 1.5
+            else '市場略未飽和' if r['PpsRatio'] > 1
+            else '競爭較激烈')
+    grow = ('人口成長中' if r['GrowthRate'] > 0.5
+            else '人口穩定' if r['GrowthRate'] > -0.5
+            else '人口流失中')
+
+    return (
+        f"<b>① 競爭程度（權重 60%）</b><br>"
+        f"　每店服務 {int(r['PeoplePerStore'])} 人，是全國平均（{national_pps:.0f} 人）的 "
+        f"<b>{r['PpsRatio']:.2f} 倍</b> → {comp}。<br>"
+        f"　在 {n_evaluated} 個評估鄉鎮中排名百分位：<b>{r['CompScore']:.1f} 分</b><br><br>"
+
+        f"<b>② 成長性（權重 40%）</b><br>"
+        f"　人口成長率 <b>{r['GrowthRate']:+.2f}%</b> → {grow}。<br>"
+        f"　排名百分位：<b>{r['GrowScore']:.1f} 分</b><br><br>"
+
+        f"<b>③ 加權計算</b><br>"
+        f"　{r['CompScore']:.1f} × 0.6 + {r['GrowScore']:.1f} × 0.4 = "
+        f"<b>{r['Opportunity']:.1f} 分</b>"
+    )
+
+
+def ltc_reasoning(r):
+    """產生長照缺口評估的推理過程"""
+    if r['Elderly65'] < MIN_ELDERLY:
+        return f"此鄉鎮 65 歲以上人口僅 {int(r['Elderly65']):,} 人，未達 3,000 人的評估門檻（樣本過小易失真），故不納入評估。"
+
+    if r['Beds'] == 0:
+        return (
+            f"<b>① 需求端</b><br>　65 歲以上人口 <b>{int(r['Elderly65']):,} 人</b><br><br>"
+            f"<b>② 供給端</b><br>　住宿式老人福利機構 <b>0 家、0 床</b><br><br>"
+            f"<b>③ 缺口計算</b><br>"
+            f"　若要達到全國平均（每千名老人 {national_bp1k:.1f} 床），<br>"
+            f"　需增設 <b>{int(r['BedShortfall']):,} 床</b>。<br><br>"
+            f"<span style='color:#c0392b'>※ 注意：此為「住宿式老人福利機構」統計，"
+            f"不含護理之家與日照中心等其他長照服務。</span>"
+        )
+
+    ratio = r['BedsPer1000'] / national_bp1k
+    level = ('高於全國平均' if ratio >= 1
+             else '略低於全國平均' if ratio >= 0.7
+             else '明顯低於全國平均')
+
+    return (
+        f"<b>① 需求端</b><br>　65 歲以上人口 <b>{int(r['Elderly65']):,} 人</b><br><br>"
+        f"<b>② 供給端</b><br>　機構 {int(r['Institutions'])} 家、核定 <b>{int(r['Beds']):,} 床</b><br><br>"
+        f"<b>③ 供給密度</b><br>"
+        f"　每千名老人 <b>{r['BedsPer1000']:.1f} 床</b>（全國平均 {national_bp1k:.1f} 床）<br>"
+        f"　= 全國平均的 <b>{ratio:.2f} 倍</b> → {level}<br><br>"
+        f"<b>④ 缺口</b><br>　達全國平均尚缺 <b>{int(r['BedShortfall']):,} 床</b>"
+    )
+
+
 detail = {r['NAME']: {
     'Population': f"{int(r['Population']):,}",
     'Restaurants': f"{int(r['Restaurants']):,}",
@@ -162,6 +231,7 @@ detail = {r['NAME']: {
     'SiteVerdict': ('未評估（人口 < 2 萬）' if r['Population'] < MIN_POP
                     else '🟢 藍海，建議進場' if r['Opportunity'] >= 70
                     else '🟡 中等' if r['Opportunity'] >= 40 else '🔴 紅海，競爭激烈'),
+    'SiteWhy': site_reasoning(r),
     'Elderly65': f"{int(r['Elderly65']):,}",
     'Institutions': f"{int(r['Institutions'])} 家",
     'Beds': f"{int(r['Beds']):,} 床",
@@ -171,6 +241,7 @@ detail = {r['NAME']: {
                    else '🔴 長照沙漠，急需增設' if r['Beds'] == 0
                    else '🟠 資源不足' if r['GapIndex'] >= 50
                    else '🟡 略低於平均' if r['GapIndex'] > 0 else '🟢 資源充足'),
+    'LtcWhy': ltc_reasoning(r),
 } for _, r in towns.iterrows()}
 
 
@@ -217,6 +288,8 @@ html = """<!DOCTYPE html>
   .row span:first-child{color:#7f8c8d}
   .row span:last-child{font-weight:600}
   .ph{color:#aaa;font-size:13px;text-align:center;padding:24px 0}
+  .why{margin-top:12px;padding:12px;background:#f8fbff;border-left:4px solid #1a3a5c;border-radius:6px;font-size:12.5px;line-height:1.75;color:#34495e}
+  .why-title{font-weight:700;color:#1a3a5c;margin-bottom:8px;font-size:13px}
   .rank-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #f5f5f5}
   .note{margin-top:16px;background:#fff8e6;border-left:4px solid #f0ad4e;padding:12px;border-radius:6px;font-size:12px;color:#6b5b3e}
   .hide{display:none}
@@ -309,7 +382,8 @@ html = """<!DOCTYPE html>
       '<div class="row"><span>機會指數</span><span>' + d.Opportunity + '</span></div>' +
       '<div class="row"><span>人口</span><span>' + d.Population + '</span></div>' +
       '<div class="row"><span>現有餐飲店</span><span>' + d.Restaurants + ' 家</span></div>' +
-      '<div class="row"><span>每店服務人口</span><span>' + d.PeoplePerStore + ' 人</span></div>';
+      '<div class="row"><span>每店服務人口</span><span>' + d.PeoplePerStore + ' 人</span></div>' +
+      '<div class="why"><div class="why-title">🔍 為什麼是這個評估？</div>' + d.SiteWhy + '</div>';
 
     document.getElementById('ltcDetail').innerHTML =
       '<h3>📍 鄉鎮評估</h3><div class="town">' + n + '</div>' +
@@ -318,7 +392,8 @@ html = """<!DOCTYPE html>
       '<div class="row"><span>長照機構</span><span>' + d.Institutions + '</span></div>' +
       '<div class="row"><span>核定床位</span><span>' + d.Beds + '</span></div>' +
       '<div class="row"><span>每千名老人床位</span><span>' + d.BedsPer1000 + '</span></div>' +
-      '<div class="row"><span>達標尚缺床位</span><span>' + d.BedShortfall + '</span></div>';
+      '<div class="row"><span>達標尚缺床位</span><span>' + d.BedShortfall + '</span></div>' +
+      '<div class="why"><div class="why-title">🔍 為什麼是這個評估？</div>' + d.LtcWhy + '</div>';
   });
 </script>
 </body>
