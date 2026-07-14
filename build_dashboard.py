@@ -36,7 +36,8 @@ MIN_ELDERLY = 3000    # 長照分析：老年人口門檻（避免極小鄉鎮�
 # 而高雄真正的三民區根本不存在。改用官方版後兩個問題一併消失，
 # 下方的合併完整性檢查則確保同類錯誤不會再無聲發生。
 towns = gpd.read_file('town_boundaries.geojson')
-towns['geometry'] = towns.geometry.simplify(0.001)      # 簡化幾何，加快載入
+# 簡化幾何：0.002° ≈ 220 公尺，在全島尺度下肉眼無差別，但檔案小很多、載入快很多
+towns['geometry'] = towns.geometry.simplify(0.002)
 
 site = pd.read_csv('town_indicators.csv')               # 餐飲選址指標
 ltc = pd.read_csv('ltc_indicators.csv')                 # 長照供需指標
@@ -124,6 +125,27 @@ TAIWAN_BOUNDS = [[lat_min, lon_min], [lat_max, lon_max]]
 print(f'地圖視野：緯度 {lat_min:.2f}~{lat_max:.2f}、經度 {lon_min:.2f}~{lon_max:.2f}')
 
 
+def _round(o, nd=4):
+    """遞迴把座標四捨五入到小數 4 位（約 11 公尺精度，全島尺度下綽綽有餘）"""
+    if isinstance(o, list):
+        return [_round(x, nd) for x in o]
+    return round(o, nd) if isinstance(o, float) else o
+
+
+def slim_geojson(gdf, field):
+    """
+    產生「瘦身版」GeoJSON：只保留繪圖真正需要的三個欄位，並降低座標精度。
+
+    原本每張地圖各內嵌一份 1.5MB 的完整圖資（兩張共 3MB），
+    瀏覽器光是解析就要十幾秒，使用者會以為地圖壞掉。
+    只留必要欄位 + 座標取 4 位小數後，體積約剩四分之一。
+    """
+    d = json.loads(gdf[['NAME', field, '_eligible', 'geometry']].to_json(drop_id=True))
+    for f in d['features']:
+        f['geometry']['coordinates'] = _round(f['geometry']['coordinates'])
+    return d
+
+
 def build_map(field, caption, colors, vmin, vmax, eligible_mask, filename):
     m = folium.Map(tiles='cartodbpositron')
     m.fit_bounds(TAIWAN_BOUNDS, padding=(8, 8))
@@ -132,7 +154,7 @@ def build_map(field, caption, colors, vmin, vmax, eligible_mask, filename):
 
     towns['_eligible'] = eligible_mask
     folium.GeoJson(
-        towns,
+        slim_geojson(towns, field),
         style_function=lambda f: {
             'fillColor': (colormap(f['properties'][field])
                           if f['properties']['_eligible'] else '#e0e0e0'),
