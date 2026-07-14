@@ -69,7 +69,10 @@
   /* 地圖不設固定高度，由 grid stretch 撐滿整列，避免右欄較高時左下留下大片空白 */
   .main{display:grid;grid-template-columns:1fr 336px;gap:28px;align-items:stretch}
   .map-box{background:var(--surface);border:1px solid var(--rule);min-height:600px;position:relative}
-  .map-box iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+  /* 地圖延後載入，載入期間顯示提示（iframe 載完會蓋在上面） */
+  .map-box::before{content:'地圖載入中…';position:absolute;inset:0;display:flex;align-items:center;
+                   justify-content:center;color:var(--ink-3);font-size:13px;font-weight:300}
+  .map-box iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:var(--surface)}
   .side{display:flex;flex-direction:column;gap:22px}
   .panel{background:var(--surface);border:1px solid var(--rule);padding:18px}
   .panel h3{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--ink);
@@ -189,7 +192,8 @@
       <div class="note">
         <b>分析模型：</b>機會指數 = 競爭分數(60%) + 成長分數(40%)。競爭分數看「每店服務人口」（越多代表店少人多、市場未飽和）；成長分數看人口淨變化。僅評估人口 ≥ 2 萬的鄉鎮。<br>
         <b>已知限制：</b>本模型以「居住人口」為市場基礎，但商業區（如臺中中區）有大量通勤消費人口，實際商機會被低估；郊區則可能因外食習慣較低而被高估。實務選址仍需搭配人流、租金與交通資料。
-        <a class="more" href="#sources">
+      </div>
+      <a class="more" href="#sources">
         <span>本平台所有數字的資料來源與免責聲明</span>
         <span class="more-go">向下查看 ↓</span>
       </a>
@@ -200,7 +204,7 @@
       <div class="q">哪些地區的長照資源最不足，應優先增設機構？</div>
       <div class="cards"><div class="card"><div class="num">60,862</div><div class="lbl">全台長照床位</div></div><div class="card"><div class="num">13.6 床</div><div class="lbl">每千名老人床位（全國）</div></div><div class="card"><div class="num">65</div><div class="lbl">零床位鄉鎮（長照沙漠）</div></div><div class="card"><div class="num">18,009 床</div><div class="lbl">達標尚缺床位</div></div></div>
       <div class="main">
-        <div class="map-box"><iframe id="ltcFrame" src="ltc_map.html" title="長照資源缺口分析地圖"></iframe></div>
+        <div class="map-box"><iframe id="ltcFrame" data-src="ltc_map.html" title="長照資源缺口分析地圖"></iframe></div>
         <div class="side">
           <div class="panel" id="ltcDetail">
             <h3>鄉鎮評估</h3>
@@ -213,7 +217,8 @@
       <div class="note">
         <b>分析模型：</b>以「每千名老人床位數」衡量長照供給密度，全國平均為 13.6 床。缺口指數 0 = 達全國平均，100 = 完全無床位。「達標尚缺床位」= 該鄉鎮達到全國平均水準所需增設的床數。僅評估老年人口 ≥ 3,000 的鄉鎮。<br>
         <b>資料範圍限制（重要）：</b>本資料為衛福部社家署「老人福利機構」名冊，屬<b>住宿式安養／養護機構</b>；<b>不含</b>護理之家（另依《護理機構法》管理）與長照2.0 的居家式／社區式服務（如日照中心）。因此「0 床」代表該鄉鎮無住宿式老人福利機構，<b>不等於完全沒有長照資源</b>。另，年齡結構資料最新僅至 2024 年。
-        <a class="more" href="#sources">
+      </div>
+      <a class="more" href="#sources">
         <span>本平台所有數字的資料來源與免責聲明</span>
         <span class="more-go">向下查看 ↓</span>
       </a>
@@ -291,13 +296,21 @@
     document.getElementById('m-site').classList.toggle('hide', m !== 'site');
     document.getElementById('m-ltc').classList.toggle('hide', m !== 'ltc');
 
-    // Leaflet 在 display:none 的容器裡初始化時，量到的尺寸是 0×0，
-    // 容器顯示出來後它並不知道自己變大了 —— 結果就是一片灰白。
-    // 對 iframe 觸發一次 resize，Leaflet 會自行重算容器尺寸並重繪。
+    // Leaflet 若在 display:none 的容器中初始化，量到的尺寸是 0×0，
+    // 容器顯示出來後它並不知道自己變大了 —— 結果就是一片空白。
+    //
+    // 因此地圖採「延後載入」：iframe 先不給 src，等該模組真的被切換到、
+    // 容器已具備正確尺寸時才載入。Leaflet 從一開始就量到正確尺寸，
+    // 根本不會發生上述問題（順帶讓首頁少載 1.5MB）。
     var frame = document.getElementById(m === 'site' ? 'siteFrame' : 'ltcFrame');
-    requestAnimationFrame(function() {
-      try { frame.contentWindow.dispatchEvent(new Event('resize')); } catch (e) {}
-    });
+    if (frame && !frame.src && frame.dataset.src) {
+      frame.src = frame.dataset.src;
+    } else if (frame && frame.contentWindow) {
+      // 已載入過：容器尺寸可能在隱藏期間改變（例如轉螢幕），通知它重新量一次
+      requestAnimationFrame(function() {
+        try { frame.contentWindow.dispatchEvent(new Event('resize')); } catch (e) {}
+      });
+    }
   }
 
   // 顯示某鄉鎮的評估 —— 地圖點選與排行榜點選共用此函式
