@@ -147,18 +147,27 @@ def slim_geojson(gdf, field):
 
 
 def build_map(field, caption, colors, vmin, vmax, eligible_mask, filename):
-    m = folium.Map(tiles='cartodbpositron')
+    # 不使用任何外部底圖供應商（tiles=None）。
+    #   原因：先前用 Carto 的 cartodbpositron 免費圖磚，但 Carto 改為需 API 金鑰，
+    #   底圖整片變成「API KEY REQUIRED」浮水印。改為「純資料地圖」——
+    #   台灣的輪廓本來就由這 367 個鄉鎮多邊形組成，不需要外部底圖，
+    #   如此一來不論任何供應商日後改規定，地圖都不會再壞。
+    m = folium.Map(tiles=None, zoom_control=True)
     m.fit_bounds(TAIWAN_BOUNDS, padding=(8, 8))
     colormap = cm.LinearColormap(colors, vmin=vmin, vmax=vmax)
     colormap.caption = caption
+
+    # 地圖底色（讀作「海／留白」），與整站米色調一致
+    m.get_root().header.add_child(folium.Element(
+        '<style>.leaflet-container{background:#ece7db!important}</style>'))
 
     towns['_eligible'] = eligible_mask
     folium.GeoJson(
         slim_geojson(towns, field),
         style_function=lambda f: {
             'fillColor': (colormap(f['properties'][field])
-                          if f['properties']['_eligible'] else '#e0e0e0'),
-            'fillOpacity': 0.75, 'color': 'white', 'weight': 0.4},
+                          if f['properties']['_eligible'] else '#d8d2c4'),
+            'fillOpacity': 0.88, 'color': '#b7ad9b', 'weight': 0.5},
         tooltip=folium.GeoJsonTooltip(fields=['NAME'], aliases=['']),
     ).add_to(m)
     colormap.add_to(m)
